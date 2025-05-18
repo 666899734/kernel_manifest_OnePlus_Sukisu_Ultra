@@ -1,41 +1,6 @@
 #!/bin/bash
 set -e
 
-# ===== 获取脚本目录 =====
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-cd "$SCRIPT_DIR"
-
-# ===== 设置自定义参数 =====
-echo ">>> 读取用户配置..."
-read -p "请输入 SoC 分支名称（默认：sm8650）: " SOC_BRANCH
-SOC_BRANCH=${SOC_BRANCH:-sm8650}
-
-read -p "请输入 manifest 文件名（默认：oneplus_ace3_pro_v.xml）: " MANIFEST_FILE
-MANIFEST_FILE=${MANIFEST_FILE:-oneplus_ace3_pro_v.xml}
-
-read -p "请输入自定义内核后缀（默认：oki-Coolapk@Suxiaoqing）: " CUSTOM_SUFFIX
-CUSTOM_SUFFIX=${CUSTOM_SUFFIX:-oki-Coolapk@Suxiaoqing}
-
-read -p "请输入 Bazel 构建目标（默认：pineapple）: " BAZEL_TARGET
-BAZEL_TARGET=${BAZEL_TARGET:-pineapple}
-
-read -p "是否使用 patch_linux 工具添加KPM补丁内核？(y/n，默认：y): " USE_PATCH_LINUX
-USE_PATCH_LINUX=${USE_PATCH_LINUX:-y}
-
-read -p "是否应用 lz4kd 补丁？(y/n，默认：y): " APPLY_LZ4KD
-APPLY_LZ4KD=${APPLY_LZ4KD:-y}
-
-echo
-echo "===== 配置信息 ====="
-echo "SoC 分支: $SOC_BRANCH"
-echo "manifest: $MANIFEST_FILE"
-echo "后缀: -$CUSTOM_SUFFIX"
-echo "构建目标: $BAZEL_TARGET"
-echo "使用 patch_linux: $USE_PATCH_LINUX"
-echo "应用 lz4kd 补丁: $APPLY_LZ4KD"
-echo "===================="
-echo
-
 # ===== 创建工作目录 =====
 WORKDIR="$SCRIPT_DIR/kernel_workspace"
 mkdir -p "$WORKDIR"
@@ -91,18 +56,18 @@ sed -i "s/DKSU_VERSION=12800/DKSU_VERSION=${KSU_VERSION}/" kernel/Makefile
 # ===== 克隆补丁仓库 =====
 echo ">>> 克隆补丁仓库..."
 cd "$WORKDIR/kernel_platform"
-git clone https://gitlab.com/simonpunk/susfs4ksu.git -b gki-android14-6.1
+git clone https://gitlab.com/simonpunk/susfs4ksu.git -b gki-android15-6.6
 git clone https://github.com/Xiaomichael/kernel_patches.git
 git clone https://github.com/ShirkNeko/SukiSU_patch.git
 
 # ===== 应用 SUSFS 补丁 =====
 echo ">>> 应用 SUSFS 补丁..."
-cp ./susfs4ksu/kernel_patches/50_add_susfs_in_gki-android14-6.1.patch ./common/
+cp ./susfs4ksu/kernel_patches/50_add_susfs_in_gki-android15-6.6.patch ./common/
 cp ./kernel_patches/next/syscall_hooks.patch ./common/
 cp ./susfs4ksu/kernel_patches/fs/* ./common/fs/
 cp ./susfs4ksu/kernel_patches/include/linux/* ./common/include/linux/
 cd ./common
-patch -p1 < 50_add_susfs_in_gki-android14-6.1.patch || true
+patch -p1 < 50_add_susfs_in_gki-android15-6.6.patch || true
 cp ../kernel_patches/69_hide_stuff.patch ./
 patch -p1 -F 3 < 69_hide_stuff.patch
 patch -p1 -F 3 < syscall_hooks.patch
